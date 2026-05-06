@@ -1,0 +1,104 @@
+import type { FormEvent } from 'react'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import type { StoredUser } from '../auth/userStorage'
+import { getStoredUserJson } from '../auth/userStorage'
+import { AuthBackButton } from '../components/AuthBackButton'
+import { PageLayout } from '../components/PageLayout'
+
+export default function Login() {
+  const navigate = useNavigate()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const raw = getStoredUserJson()
+    if (!raw) {
+      alert('Invalid credentials')
+      return
+    }
+
+    let storedUser: StoredUser
+    try {
+      storedUser = JSON.parse(raw) as StoredUser
+    } catch {
+      alert('Invalid credentials')
+      return
+    }
+
+    if (email === storedUser.email && password === storedUser.password) {
+      localStorage.setItem('user', JSON.stringify(storedUser))
+      navigate('/dashboard')
+    } else {
+      alert('Invalid credentials')
+    }
+  }
+
+  return (
+    <PageLayout>
+      <div className="relative flex min-h-[calc(100svh-140px)] flex-col px-6 pb-12 pt-4 md:px-10">
+        <div className="flex items-center gap-4 mb-6 shrink-0 px-4 md:px-8">
+          <button
+            onClick={() => {
+              if (window.history.length > 1) {
+                navigate(-1)
+              } else {
+                navigate("/")
+              }
+            }}
+            className="rounded-full p-2 transition hover:bg-white/10 active:scale-95 text-white"
+            title="Go to Home"
+          >
+            ←
+          </button>
+          <h1 className="text-xl md:text-2xl font-semibold text-white">
+            Login
+          </h1>
+        </div>
+        <div className="h-[1px] w-full bg-white/10 mb-6 shrink-0"></div>
+
+        <div className="flex flex-1 flex-col items-center justify-center pb-12 mt-4">
+          <div className="liquid-glass w-full max-w-md rounded-2xl p-8">
+            <h2 className="text-center font-general-sans text-2xl font-semibold tracking-tight text-[hsl(var(--foreground))]">
+              Welcome Back
+            </h2>
+
+            <form className="mt-8 flex flex-col gap-5" onSubmit={handleSubmit}>
+              <label className="flex flex-col gap-1.5 text-left text-sm font-medium text-[hsl(var(--foreground))]/80">
+                Email
+                <input
+                  required
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="liquid-glass rounded-xl border-none bg-transparent px-4 py-3 text-[hsl(var(--foreground))] outline-none placeholder:text-white/35 focus-visible:ring-2 focus-visible:ring-white/20"
+                  placeholder="you@school.edu"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 text-left text-sm font-medium text-[hsl(var(--foreground))]/80">
+                Password
+                <input
+                  required
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="liquid-glass rounded-xl border-none bg-transparent px-4 py-3 text-[hsl(var(--foreground))] outline-none placeholder:text-white/35 focus-visible:ring-2 focus-visible:ring-white/20"
+                  placeholder="••••••••"
+                />
+              </label>
+              <button
+                type="submit"
+                className="liquid-glass mt-2 rounded-full px-6 py-3 text-center text-base font-medium text-[hsl(var(--foreground))] transition hover:bg-white/5 transition-all duration-200 ease-in-out hover:scale-105 hover:bg-white/10 active:scale-95"
+              >
+                Login
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </PageLayout>
+  )
+}
