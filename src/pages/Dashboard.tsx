@@ -39,13 +39,7 @@ export default function Dashboard() {
         <header className="flex flex-col">
           <div className="flex items-center gap-4 mb-6 px-4 md:px-8">
             <button
-              onClick={() => {
-                if (window.history.length > 1) {
-                  navigate(-1)
-                } else {
-                  navigate("/")
-                }
-              }}
+              onClick={() => navigate(-1)}
               className="rounded-full p-2 transition hover:bg-white/10 active:scale-95 text-white"
               title="Go to Home"
             >

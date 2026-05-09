@@ -79,13 +79,7 @@ export default function StudyPlanner() {
         <header className="mb-12 flex flex-col items-center text-center">
           <div className="w-full flex justify-start mb-6">
             <button
-              onClick={() => {
-                if (window.history.length > 1) {
-                  navigate(-1)
-                } else {
-                  navigate("/")
-                }
-              }}
+              onClick={() => navigate(-1)}
               className="rounded-full p-2 transition hover:bg-white/10 active:scale-95 text-white"
               title="Go to Home"
             >

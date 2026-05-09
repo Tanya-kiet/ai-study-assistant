@@ -8,6 +8,7 @@ import Login from './pages/Login'
 import Quiz from './pages/Quiz'
 import Signup from './pages/Signup'
 import StudyPlanner from './pages/StudyPlanner'
+import ForgotPassword from './pages/ForgotPassword'
 
 function AnimatedRoutes() {
   const location = useLocation()
@@ -22,6 +23,7 @@ function AnimatedRoutes() {
         <Route path="/chat" element={<Chat />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/planner" element={<StudyPlanner />} />
       </Routes>
     </AnimatePresence>

@@ -40,13 +40,7 @@ export default function Login() {
       <div className="relative flex min-h-[calc(100svh-140px)] flex-col px-6 pb-12 pt-4 md:px-10">
         <div className="flex items-center gap-4 mb-6 shrink-0 px-4 md:px-8">
           <button
-            onClick={() => {
-              if (window.history.length > 1) {
-                navigate(-1)
-              } else {
-                navigate("/")
-              }
-            }}
+            onClick={() => navigate(-1)}
             className="rounded-full p-2 transition hover:bg-white/10 active:scale-95 text-white"
             title="Go to Home"
           >
@@ -77,18 +71,29 @@ export default function Login() {
                   placeholder="you@school.edu"
                 />
               </label>
-              <label className="flex flex-col gap-1.5 text-left text-sm font-medium text-[hsl(var(--foreground))]/80">
-                Password
-                <input
-                  required
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="liquid-glass rounded-xl border-none bg-transparent px-4 py-3 text-[hsl(var(--foreground))] outline-none placeholder:text-white/35 focus-visible:ring-2 focus-visible:ring-white/20"
-                  placeholder="••••••••"
-                />
-              </label>
+              <div className="flex flex-col gap-1.5">
+                <label className="flex flex-col gap-1.5 text-left text-sm font-medium text-[hsl(var(--foreground))]/80">
+                  Password
+                  <input
+                    required
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="liquid-glass rounded-xl border-none bg-transparent px-4 py-3 text-[hsl(var(--foreground))] outline-none placeholder:text-white/35 focus-visible:ring-2 focus-visible:ring-white/20"
+                    placeholder="••••••••"
+                  />
+                </label>
+                <div className="text-right mt-1">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/forgot-password')}
+                    className="text-sm font-medium text-white/50 hover:text-white transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-[1px] after:w-0 hover:after:w-full after:bg-white after:transition-all after:duration-300"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              </div>
               <button
                 type="submit"
                 className="liquid-glass mt-2 rounded-full px-6 py-3 text-center text-base font-medium text-[hsl(var(--foreground))] transition hover:bg-white/5 transition-all duration-200 ease-in-out hover:scale-105 hover:bg-white/10 active:scale-95"

@@ -21,7 +21,14 @@ export function Hero() {
         <button
           type="button"
           className="liquid-glass w-full shrink-0 rounded-full px-8 py-4 text-base font-medium text-[hsl(var(--foreground))] transition hover:bg-white/5 md:py-5 transition-all duration-200 ease-in-out hover:scale-105 hover:bg-white/10 active:scale-95"
-          onClick={() => navigate('/dashboard')}
+          onClick={() => {
+            const loggedIn = !!localStorage.getItem('user')
+            if (loggedIn) {
+              navigate('/dashboard')
+            } else {
+              navigate('/signup')
+            }
+          }}
         >
           Get Started Free
         </button>

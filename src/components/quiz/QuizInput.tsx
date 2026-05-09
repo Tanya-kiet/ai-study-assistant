@@ -1,97 +1,161 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { getNotes, type Note } from '../../services/notes'
+import { UploadCloud, CheckCircle2, FileText, Search } from 'lucide-react'
 
-export type QuizMode = 'topic' | 'upload' | 'notes'
+export type QuizSources = {
+  topic: string
+  files: { name: string; content: string }[]
+  noteIds: string[]
+}
 
 type QuizInputProps = {
-  mode: QuizMode
-  setMode: (mode: QuizMode) => void
-  topic: string
-  setTopic: (topic: string) => void
+  sources: QuizSources
+  setSources: React.Dispatch<React.SetStateAction<QuizSources>>
   loading: boolean
 }
 
-const mockNotes = [
-  { id: '1', title: 'Operating Systems - Processes' },
-  { id: '2', title: 'Data Structures - Trees' },
-  { id: '3', title: 'Database Normalization' },
-  { id: '4', title: 'Computer Networks - OSI Model' },
-]
+export function QuizInput({ sources, setSources, loading }: QuizInputProps) {
+  const [savedNotes, setSavedNotes] = useState<Note[]>([])
+  const [searchNotes, setSearchNotes] = useState('')
 
-export function QuizInput({ mode, setMode, topic, setTopic, loading }: QuizInputProps) {
-  const [selectedNote, setSelectedNote] = useState<string | null>(null)
+  useEffect(() => {
+    setSavedNotes(getNotes())
+  }, [])
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files
+    if (!fileList) return
+
+    const newFiles = []
+    for (let i = 0; i < fileList.length; i++) {
+      const file = fileList[i]
+      if (file.type === 'text/plain') {
+        const content = await file.text()
+        newFiles.push({ name: file.name, content })
+      } else {
+        newFiles.push({ name: file.name, content: `[Mock Extracted Content for ${file.name}]` })
+      }
+    }
+
+    setSources(prev => ({
+      ...prev,
+      files: [...prev.files, ...newFiles]
+    }))
+    e.target.value = ''
+  }
+
+  const removeFile = (index: number) => {
+    setSources(prev => ({
+      ...prev,
+      files: prev.files.filter((_, i) => i !== index)
+    }))
+  }
+
+  const toggleNote = (id: string) => {
+    setSources(prev => {
+      if (prev.noteIds.includes(id)) {
+        return { ...prev, noteIds: prev.noteIds.filter(nid => nid !== id) }
+      }
+      return { ...prev, noteIds: [...prev.noteIds, id] }
+    })
+  }
+
+  const filteredNotes = savedNotes.filter(n => n.title.toLowerCase().includes(searchNotes.toLowerCase()))
 
   return (
     <div className="flex flex-col gap-6 w-full">
-      {/* Tabs */}
-      <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-        {(['topic', 'upload', 'notes'] as const).map((m) => {
-          const isActive = mode === m
-          return (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              disabled={loading}
-              className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 capitalize shrink-0 ${
-                isActive
-                  ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 shadow-[0_0_15px_rgba(99,102,241,0.15)]'
-                  : 'bg-white/[0.03] text-white/60 border border-transparent hover:bg-white/[0.08] hover:text-white/90'
-              }`}
-            >
-              {m === 'upload' ? 'Upload File' : m === 'notes' ? 'From Notes' : 'Topic'}
-            </button>
-          )
-        })}
-      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* Source 1: Topic */}
+        <div className="liquid-glass rounded-2xl p-6 border border-white/[0.08] flex flex-col h-full relative overflow-hidden group">
+          <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500/50" />
+          <h3 className="text-lg font-semibold text-white mb-4">1. Specific Topic</h3>
+          <input
+            type="text"
+            value={sources.topic}
+            onChange={(e) => setSources(prev => ({ ...prev, topic: e.target.value }))}
+            placeholder="e.g. Database Normalization, OSI Model..."
+            disabled={loading}
+            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 disabled:opacity-50"
+          />
+        </div>
 
-      {/* Input Area */}
-      <div className="liquid-glass rounded-2xl p-6 border border-white/[0.08] min-h-[160px] flex flex-col justify-center">
-        {mode === 'topic' && (
-          <div className="w-full">
-            <label className="flex flex-col gap-3 text-sm font-medium text-[hsl(var(--foreground))]/80">
-              Enter a Topic
-              <input
-                type="text"
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                placeholder="Enter topic (e.g. DBMS, OS, DSA...)"
-                disabled={loading}
-                className="liquid-glass w-full rounded-xl border-none bg-transparent px-5 py-4 text-base text-[hsl(var(--foreground))] outline-none placeholder:text-white/30 focus-visible:ring-2 focus-visible:ring-indigo-500/50 transition-shadow disabled:opacity-50"
-              />
-            </label>
-          </div>
-        )}
+        {/* Source 2: Upload Files */}
+        <div className="liquid-glass rounded-2xl p-6 border border-white/[0.08] flex flex-col h-full relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-purple-500/50" />
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center justify-between">
+            <span>2. Upload Material</span>
+            <span className="text-xs font-normal text-white/50 bg-white/5 px-2 py-1 rounded-md">PDF/TXT/DOCX</span>
+          </h3>
+          
+          <label className="flex-1 min-h-[60px] border border-dashed border-white/20 hover:border-purple-400/50 hover:bg-white/5 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all">
+            <UploadCloud size={24} className="text-white/40 mb-2" />
+            <span className="text-sm text-white/60">Click to upload files</span>
+            <input type="file" multiple accept=".txt,.pdf,.docx" className="hidden" onChange={handleFileSelect} disabled={loading} />
+          </label>
 
-        {mode === 'upload' && (
-          <div className="border border-dashed border-white/20 rounded-xl p-10 text-center flex flex-col items-center justify-center gap-3 hover:bg-white/[0.02] transition-colors cursor-pointer group">
-            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <span className="text-xl">📁</span>
-            </div>
-            <p className="text-[hsl(var(--foreground))]/90 font-medium">Drag & drop file or click to upload</p>
-            <p className="text-sm text-white/50">PDF, DOCX, TXT supported</p>
-            <input type="file" className="hidden" />
-          </div>
-        )}
-
-        {mode === 'notes' && (
-          <div className="w-full">
-            <p className="text-sm font-medium text-[hsl(var(--foreground))]/80 mb-3">Select from saved notes</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {mockNotes.map((note) => (
-                <div
-                  key={note.id}
-                  onClick={() => setSelectedNote(note.id)}
-                  className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                    selectedNote === note.id
-                      ? 'border-indigo-500/40 bg-indigo-500/10 shadow-[0_0_15px_rgba(99,102,241,0.1)]'
-                      : 'border-white/10 bg-white/[0.02] hover:bg-white/5 hover:border-white/20'
-                  }`}
-                >
-                  <p className="text-[hsl(var(--foreground))]/90 font-medium text-sm truncate">{note.title}</p>
+          {sources.files.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2 max-h-[80px] overflow-y-auto custom-scrollbar">
+              {sources.files.map((file, i) => (
+                <div key={i} className="flex items-center gap-2 bg-purple-500/20 border border-purple-500/30 text-purple-200 text-xs px-2 py-1 rounded-md">
+                  <FileText size={12} />
+                  <span className="truncate max-w-[100px]">{file.name}</span>
+                  <button onClick={() => removeFile(i)} className="hover:text-white ml-1">×</button>
                 </div>
               ))}
             </div>
+          )}
+        </div>
+
+        {/* Source 3: Saved Notes */}
+        <div className="md:col-span-2 liquid-glass rounded-2xl p-6 border border-white/[0.08] flex flex-col relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-pink-500/50" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+            <h3 className="text-lg font-semibold text-white">3. Your Saved Notes</h3>
+            <div className="relative w-full sm:w-64">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <input 
+                type="text" 
+                placeholder="Search notes..." 
+                value={searchNotes}
+                onChange={e => setSearchNotes(e.target.value)}
+                className="w-full bg-black/20 border border-white/10 rounded-lg pl-9 pr-3 py-1.5 text-sm text-white focus:outline-none focus:border-pink-500/50"
+              />
+            </div>
           </div>
-        )}
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[160px] overflow-y-auto custom-scrollbar pr-2">
+            {savedNotes.length === 0 ? (
+              <p className="text-white/40 text-sm col-span-full py-4 text-center">No saved notes found. Create some in the Notes section!</p>
+            ) : filteredNotes.length === 0 ? (
+              <p className="text-white/40 text-sm col-span-full py-4 text-center">No matching notes.</p>
+            ) : (
+              filteredNotes.map(note => {
+                const isSelected = sources.noteIds.includes(note.id)
+                return (
+                  <div 
+                    key={note.id}
+                    onClick={() => !loading && toggleNote(note.id)}
+                    className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                      isSelected 
+                      ? 'border-pink-500/40 bg-pink-500/10 shadow-[0_0_15px_rgba(236,72,153,0.15)]' 
+                      : 'border-white/10 hover:bg-white/5 hover:border-white/20 bg-black/20'
+                    }`}
+                  >
+                    <div className="mt-0.5">
+                      {isSelected ? <CheckCircle2 size={16} className="text-pink-400" /> : <div className="w-4 h-4 rounded-full border border-white/20" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white/90 text-sm font-medium truncate">{note.title}</p>
+                      <p className="text-white/40 text-xs truncate mt-1">{note.content.substring(0, 40) || 'Empty note'}...</p>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   )

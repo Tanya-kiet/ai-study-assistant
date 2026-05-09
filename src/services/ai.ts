@@ -28,9 +28,15 @@ export async function getValidModel(): Promise<string> {
   }
 }
 
-export async function askAI(message: string): Promise<string> {
+export async function askAI(message: string, context?: string): Promise<string> {
   try {
     const modelToUse = await getValidModel();
+    
+    let systemPrompt = "You are a helpful AI study assistant.";
+    if (context) {
+      systemPrompt += `\n\nUse the following notes/context to answer the user's question, if relevant:\n\n${context}`;
+    }
+
     const res = await fetch(`${BASE_URL}/chat/completions`, {
       method: "POST",
       headers: {
@@ -40,8 +46,9 @@ export async function askAI(message: string): Promise<string> {
       body: JSON.stringify({
         model: modelToUse,
         messages: [
-          { role: "system", content: "You are a helpful AI study assistant." },
+          { role: "system", content: systemPrompt },
           { role: "user", content: message }
+
         ],
       }),
     });
@@ -71,20 +78,39 @@ export async function askAI(message: string): Promise<string> {
 
 export type QuizQuestion = {
   question: string
-  options: string[]
+  options?: string[]
   answer: string
+  explanation?: string
 }
 
-export async function generateQuiz(topic: string, difficulty: string = "Medium", count: number = 5): Promise<QuizQuestion[]> {
+export async function generateQuiz(
+  topic: string, 
+  difficulty: string = "Medium", 
+  count: number = 5,
+  questionType: string = "MCQ",
+  context: string = ""
+): Promise<QuizQuestion[]> {
   try {
-    const prompt = `Generate ${count} MCQ questions on ${topic} with ${difficulty} difficulty.
-Return ONLY JSON: [
-  {
-    "question": "",
-    "options": ["", "", "", ""],
-    "answer": ""
-  }
-]`;
+    let typeInstructions = ""
+    let jsonFormat = ""
+
+    if (questionType === "True/False") {
+      typeInstructions = "Generate True/False questions."
+      jsonFormat = `[ { "question": "", "options": ["True", "False"], "answer": "True or False", "explanation": "Brief explanation" } ]`
+    } else if (questionType === "Short Answer") {
+      typeInstructions = "Generate Short Answer questions."
+      jsonFormat = `[ { "question": "", "answer": "The exact short answer", "explanation": "Brief explanation" } ]`
+    } else {
+      typeInstructions = "Generate Multiple Choice questions (4 options)."
+      jsonFormat = `[ { "question": "", "options": ["", "", "", ""], "answer": "The correct option exactly as written in options", "explanation": "Brief explanation" } ]`
+    }
+
+    let prompt = `Generate ${count} ${typeInstructions} on the topic: "${topic}" with ${difficulty} difficulty.
+Return ONLY valid JSON format matching this structure: ${jsonFormat}`
+
+    if (context.trim()) {
+      prompt += `\n\nBase your questions primarily on the following context/notes:\n\n${context}`
+    }
 
     const modelToUse = await getValidModel();
     const res = await fetch(`${BASE_URL}/chat/completions`, {
@@ -102,12 +128,10 @@ Return ONLY JSON: [
     const data = await res.json();
     console.log("AI RAW RESPONSE:", data);
 
-    const text =
-      data?.choices?.[0]?.message?.content ||
-      data?.output ||
-      "[]";
-
-    console.log("QUIZ RAW:", text);
+    let text = data?.choices?.[0]?.message?.content || data?.output || "[]";
+    
+    // Clean markdown code blocks if the AI returns them
+    text = text.replace(/```json/g, '').replace(/```/g, '').trim()
 
     try {
       return JSON.parse(text) as QuizQuestion[];
